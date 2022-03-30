@@ -42,31 +42,6 @@ class TreeNode:
         self.split_attr = None
         self.children = {}
         self.max_depth = max_depth
-        self.mushroom = {
-            "target": Classification,
-            "cap_shape": CapShape,
-            "cap_surface": CapSurface,
-            "cap_color": CapColor,
-            "bruises": Bruises,
-            "odor": Odor,
-            "gill_attachment": GillAttachment,
-            "gill_spacing": GillSpacing,
-            "gill_size": GillSize,
-            "gill_color": GillColor,
-            "stalk_shape": StalkShape,
-            "stalk_root": StalkRoot,
-            "stalk_surface_above_ring": StalkSurfaceAboveRing,
-            "stalk_surface_below_ring": StalkSurfaceBelowRing,
-            "stalk_color_above_ring": StalkColorAboveRing,
-            "stalk_color_below_ring": StalkColorBelowRing,
-            "veil_type": VeilType,
-            "veil_color": VeilColor,
-            "ring_number": RingNumber,
-            "ring_type": RingType,
-            "spore_print_color": SporePrintColor,
-            "population": Population,
-            "habitat": Habitat,
-        }
 
     def make(self, depth=0):
         """_summary_"""
@@ -110,37 +85,19 @@ class TreeNode:
         # print(f"self.split_attr: {self.split_attr}")
         if self.split_attr is None:
             print(
-                f"{prefix} | decision -> {self.mushroom['target'][self.decision].value}"
+                f"{prefix} | decision -> {mushroom_mapping['target'][self.decision].value}"
             )
         else:
             for k, v in self.children.items():
                 if prefix:
                     v.pretty_print(
-                        f"{prefix} | when {self.split_attr} -> {self.mushroom[self.split_attr][k].value}"
+                        f"{prefix} | when {self.split_attr} -> {mushroom_mapping[self.split_attr][k].value}"
                     )
 
                 else:
                     v.pretty_print(
-                        f"when {self.split_attr} -> {self.mushroom[self.split_attr][k].value}"
+                        f"when {self.split_attr} -> {mushroom_mapping[self.split_attr][k].value}"
                     )
-
-    def predict(self, sample):
-        """_summary_
-
-        Args:
-            sample (object): test sample
-
-        Returns:
-            str: decision
-        """
-        if self.decision is not None:
-            print(f"decision: {self.decision}")
-            return self.decision
-        else:
-            attr_val = sample[self.split_attr]
-            # print(f"testing {self.split_attr} -> {attr_val}")
-            child = self.children[attr_val]
-        return child.decision
 
 
 class Tree:
@@ -152,6 +109,7 @@ class Tree:
             target (_type_): _description_
         """
         self.root = None
+        self.current_node = None
 
     def fit(self, samples, target, max_depth=5):
         """_summary_
@@ -162,3 +120,53 @@ class Tree:
         """
         self.root = TreeNode(samples, target, max_depth=max_depth)
         self.root.make()
+
+    def predict(self, sample):
+        """_summary_
+
+        Args:
+            sample (object): test sample
+
+        Returns:
+            str: decision
+        """
+        decision = None
+        self.current_node = self.root
+        while decision is None:
+            if self.current_node.decision is not None:
+                # print(f"decision: {self.current_node.decision}")
+                return self.current_node.decision
+            else:
+                attr_val = sample[self.current_node.split_attr]
+                # print(
+                #     f"testing {self.current_node.split_attr} -> {mushroom_mapping[self.current_node.split_attr][attr_val].value}"
+                # )
+                self.current_node = self.current_node.children[attr_val]
+        return decision
+
+
+mushroom_mapping = {
+    "target": Classification,
+    "cap_shape": CapShape,
+    "cap_surface": CapSurface,
+    "cap_color": CapColor,
+    "bruises": Bruises,
+    "odor": Odor,
+    "gill_attachment": GillAttachment,
+    "gill_spacing": GillSpacing,
+    "gill_size": GillSize,
+    "gill_color": GillColor,
+    "stalk_shape": StalkShape,
+    "stalk_root": StalkRoot,
+    "stalk_surface_above_ring": StalkSurfaceAboveRing,
+    "stalk_surface_below_ring": StalkSurfaceBelowRing,
+    "stalk_color_above_ring": StalkColorAboveRing,
+    "stalk_color_below_ring": StalkColorBelowRing,
+    "veil_type": VeilType,
+    "veil_color": VeilColor,
+    "ring_number": RingNumber,
+    "ring_type": RingType,
+    "spore_print_color": SporePrintColor,
+    "population": Population,
+    "habitat": Habitat,
+}

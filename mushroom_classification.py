@@ -8,13 +8,36 @@ folder_path = os.path.dirname(os.path.realpath(__file__))
 logger = log.setup_custom_logger("mushy_logger")
 
 
+def evaluate_data(df):
+    df.info()
+
+    for attr in df.keys():
+        logger.debug(df[attr].value_counts(normalize=True))
+
+    # check for null values
+    logger.debug(df.isnull().sum())
+
+
+def clean_data(df):
+    # clean data if they only have 1 value
+    for attr in df.keys():
+        if df[attr].nunique() == 1:
+            del df[attr]
+
+    # remove null values from data
+    df = df.dropna()
+
+
 def main():
     # initialise data
     df = pd.read_csv(f"{os.path.join(folder_path, 'input', 'mushrooms.csv')}")
-    # remove na values from data
-    df = df.dropna()
+    evaluate_data(df)
+    clean_data(df)
+
     # split data
     train_data, test_data = train_test_split(df, test_size=0.2, random_state=2212)
+    train_data.info()
+    test_data.info()
 
     # Prepare data for training
     attrs = df.keys()
@@ -22,7 +45,7 @@ def main():
     target = "class"
 
     t = Tree()
-    t.train(data, target, max_depth=4)
+    t.train(data, target, max_depth=3)
     t.root.pretty_print()
 
     # Train Data

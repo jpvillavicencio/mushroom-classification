@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import logging
 
 logger = logging.getLogger("mushy_logger")
@@ -35,11 +34,15 @@ def compute_info_gain(samples, attr, target):
     split_ent = 0
     for value, percentage in values.iteritems():
         # get split of each attribute
-        logger.debug(f"{attr}:{value}:{percentage}")
+        logger.debug(f"{attr}:{value}:{percentage:.3f}")
         sub_ent = compute_entropy(samples[samples[attr] == value][target])
         split_ent += percentage * sub_ent
         logger.debug(
-            f"sub_ent: {compute_entropy(samples[samples[attr] == value][target])} | split_ent: {split_ent} "
+            f"sub_ent: {compute_entropy(samples[samples[attr] == value][target]):.3f} | split_ent: {split_ent:.3f} "
         )
     ent = compute_entropy(samples[target])
     return ent - split_ent
+
+
+def most_common_value(index):
+    return index.value_counts().idxmax()

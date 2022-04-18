@@ -24,7 +24,11 @@ from model.mushroom import (
     Population,
     Habitat,
 )
-from decision_tree.decision_tree_helper import compute_entropy, compute_info_gain
+from decision_tree.decision_tree_helper import (
+    compute_entropy,
+    compute_info_gain,
+    most_common_value,
+)
 
 logger = logging.getLogger("mushy_logger")
 
@@ -32,7 +36,14 @@ logger = logging.getLogger("mushy_logger")
 class TreeNode:
     """_summary_"""
 
-    def __init__(self, samples, target, curr_depth=0, max_depth=5):
+    def __init__(
+        self,
+        samples,
+        target,
+        curr_depth=0,
+        max_depth=5,
+        parent_decision=None,
+    ):
         """_summary_
 
         Args:
@@ -48,14 +59,17 @@ class TreeNode:
         self.children = {}
         self.curr_depth = curr_depth
         self.max_depth = max_depth
+        self.parent_decision = parent_decision
 
         self.train()
 
     def train(self):
-        if len(self.samples) == 0 or self.curr_depth == self.max_depth:
+        if len(self.samples) == 0:
             # if there are no samples, use arbitary value of poisonous atm.
-            self.decision = "p"
+            self.decision = self.predicted_decision
             logger.debug(f"no decision: {self.decision}")
+        elif self.curr_depth == self.max_depth:
+            self.decision = most_common_value(self.samples[self.target])
         elif len(self.samples[self.target].unique()) == 1:
             # check if data is pure
             self.decision = self.samples[self.target].unique()[0]
@@ -71,17 +85,19 @@ class TreeNode:
                 if attr_ig > info_gain_max:
                     self.split_attr = attr
                     logger.debug(
-                        f"split_attr: {self.split_attr} | previous ig: {info_gain_max} | split_attr ig: {attr_ig}"
+                        f"attr: {attr} | split_attr: {self.split_attr} | previous ig: {info_gain_max:.3f} | split_attr ig: {attr_ig:.3f}"
                     )
                     info_gain_max = attr_ig
             self.children = {}
             for v in self.samples[self.split_attr].unique():
                 index = self.samples[self.split_attr] == v
+                self.parent_decision = most_common_value(self.samples[self.target])
                 self.children[v] = TreeNode(
                     self.samples[index],
                     self.target,
                     curr_depth=self.curr_depth + 1,
                     max_depth=self.max_depth,
+                    parent_decision=self.parent_decision,
                 )
 
     def pretty_print(self, prefix=""):
@@ -111,6 +127,7 @@ class Tree:
         """Tree Constructor"""
         self.root = None
         self.current_node = None
+        self.previous_node = None
 
     def train(self, samples, target, max_depth=5):
         """trains decision tree based on samples

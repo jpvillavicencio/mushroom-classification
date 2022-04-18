@@ -1,3 +1,4 @@
+import logging
 from model.mushroom import (
     Classification,
     CapShape,
@@ -25,34 +26,40 @@ from model.mushroom import (
 )
 from decision_tree.decision_tree_helper import compute_entropy, compute_info_gain
 
+logger = logging.getLogger("mushy_logger")
+
 
 class TreeNode:
     """_summary_"""
 
-    def __init__(self, samples, target, max_depth=5):
+    def __init__(self, samples, target, curr_depth=0, max_depth=5):
         """_summary_
 
         Args:
-            samples (_type_): _description_
-            target (_type_): _description_
+            samples (dataframe): dataset
+            target (string): string of target from dataset
+            curr_depth (int, optional): current depth of tree. Defaults to 0.
+            max_depth (int, optional): maximum depth of tree. Defaults to 5.
         """
         self.decision = None
         self.samples = samples
         self.target = target
         self.split_attr = None
         self.children = {}
+        self.curr_depth = curr_depth
         self.max_depth = max_depth
 
-    def make(self, depth=0):
-        """_summary_"""
-        if len(self.samples) == 0 or depth == self.max_depth:
-            # if there are no samples, use parent node. arbitary value of poisonous atm.
-            self.decision = "P"
-            # print(f"decision: {self.decision}")
+        self.train()
+
+    def train(self):
+        if len(self.samples) == 0 or self.curr_depth == self.max_depth:
+            # if there are no samples, use arbitary value of poisonous atm.
+            self.decision = "p"
+            logger.debug(f"no decision: {self.decision}")
         elif len(self.samples[self.target].unique()) == 1:
             # check if data is pure
             self.decision = self.samples[self.target].unique()[0]
-            # print(f"pure decision: {self.decision}")
+            logger.debug(f"pure decision: {self.decision}")
         else:
             # Generate Subtree
             info_gain_max = 0
@@ -62,18 +69,20 @@ class TreeNode:
                     continue
                 attr_ig = compute_info_gain(self.samples, attr, self.target)
                 if attr_ig > info_gain_max:
-                    info_gain_max = attr_ig
                     self.split_attr = attr
-                    # print(
-                    #     f"split_attr: {self.split_attr} | previous ig: {info_gain_max} | new ig: {attr_ig}"
-                    # )
+                    logger.debug(
+                        f"split_attr: {self.split_attr} | previous ig: {info_gain_max} | split_attr ig: {attr_ig}"
+                    )
+                    info_gain_max = attr_ig
             self.children = {}
             for v in self.samples[self.split_attr].unique():
                 index = self.samples[self.split_attr] == v
                 self.children[v] = TreeNode(
-                    self.samples[index], self.target, max_depth=self.max_depth
+                    self.samples[index],
+                    self.target,
+                    curr_depth=self.curr_depth + 1,
+                    max_depth=self.max_depth,
                 )
-                self.children[v].make(depth=depth + 1)
 
     def pretty_print(self, prefix=""):
         """Prints the results of the
@@ -84,34 +93,28 @@ class TreeNode:
         # print(f"children count: {len(self.children)}")
         # print(f"self.split_attr: {self.split_attr}")
         if self.split_attr is None:
-            print(
-                f"{prefix} | decision -> {mushroom_mapping['target'][self.decision].value}"
+            logger.info(
+                f"{prefix} | decision -> {mushroom_mapping[self.target][self.decision].value}"
             )
         else:
             for k, v in self.children.items():
                 if prefix:
                     v.pretty_print(
-                        f"{prefix} | when {self.split_attr} -> {mushroom_mapping[self.split_attr][k].value}"
+                        f"{prefix} -> {self.split_attr}={mushroom_mapping[self.split_attr][k].value}"
                     )
-
                 else:
                     v.pretty_print(
-                        f"when {self.split_attr} -> {mushroom_mapping[self.split_attr][k].value}"
+                        f"{self.split_attr}={mushroom_mapping[self.split_attr][k].value}"
                     )
 
 
 class Tree:
     def __init__(self):
-        """_summary_
-
-        Args:
-            samples (_type_): _description_
-            target (_type_): _description_
-        """
+        """_summary_"""
         self.root = None
         self.current_node = None
 
-    def fit(self, samples, target, max_depth=5):
+    def train(self, samples, target, max_depth=5):
         """_summary_
 
         Args:
@@ -119,13 +122,12 @@ class Tree:
             target (_type_): _description_
         """
         self.root = TreeNode(samples, target, max_depth=max_depth)
-        self.root.make()
 
     def predict(self, sample):
         """_summary_
 
         Args:
-            sample (object): test sample
+            sample (dataframe): test sample
 
         Returns:
             str: decision
@@ -134,19 +136,19 @@ class Tree:
         self.current_node = self.root
         while decision is None:
             if self.current_node.decision is not None:
-                # print(f"decision: {self.current_node.decision}")
+                logger.debug(f"decision: {self.current_node.decision}")
                 return self.current_node.decision
             else:
                 attr_val = sample[self.current_node.split_attr]
-                # print(
-                #     f"testing {self.current_node.split_attr} -> {mushroom_mapping[self.current_node.split_attr][attr_val].value}"
-                # )
+                logger.debug(
+                    f"testing {self.current_node.split_attr} -> {mushroom_mapping[self.current_node.split_attr][attr_val].value}"
+                )
                 self.current_node = self.current_node.children[attr_val]
         return decision
 
 
 mushroom_mapping = {
-    "target": Classification,
+    "class": Classification,
     "cap_shape": CapShape,
     "cap_surface": CapSurface,
     "cap_color": CapColor,

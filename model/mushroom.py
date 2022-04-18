@@ -4,7 +4,7 @@ from enum import Enum
 class Mushroom:
     def __init__(
         self,
-        target,
+        classification,
         cap_shape,
         cap_surface,
         cap_color,
@@ -56,7 +56,7 @@ class Mushroom:
             habitat (_type_): _description_
         """
 
-        self.target = target
+        self.classification = classification
         self.cap_shape = cap_shape
         self.cap_surface = cap_surface
         self.cap_color = cap_color
@@ -82,197 +82,197 @@ class Mushroom:
 
 
 class Classification(Enum):
-    P = "POISONOUS"
-    E = "EDIBLE"
+    p = "POISONOUS"
+    e = "EDIBLE"
 
 
 class CapShape(Enum):
-    B = "BELL"
-    C = "CONICAL"
-    X = "CONVEX"
-    F = "FLAT"
-    K = "KNOBBED"
-    S = "SUNKEN"
+    b = "BELL"
+    c = "CONICAL"
+    x = "CONVEX"
+    f = "FLAT"
+    k = "KNOBBED"
+    s = "SUNKEN"
 
 
 class CapSurface(Enum):
-    F = "FIBROUS"
-    G = "GROOVES"
-    Y = "SCALY"
-    S = "SMOOTH"
+    f = "FIBROUS"
+    g = "GROOVES"
+    y = "SCALY"
+    s = "SMOOTH"
 
 
 class CapColor(Enum):
-    N = "BROWN"
-    B = "BUFF"
-    C = "CINNAMON"
-    G = "GRAY"
-    R = "GREEN"
-    P = "PINK"
-    U = "PURPLE"
-    E = "RED"
-    W = "WHITE"
-    Y = "YELLOW"
+    n = "BROWN"
+    b = "BUFF"
+    c = "CINNAMON"
+    g = "GRAY"
+    r = "GREEN"
+    p = "PINK"
+    u = "PURPLE"
+    e = "RED"
+    w = "WHITE"
+    y = "YELLOW"
 
 
 class Bruises(Enum):
-    T = "BRUISES"
-    F = "NO"
+    t = "BRUISES"
+    f = "NO"
 
 
 class Odor(Enum):
-    A = "ALMOND"
-    L = "ANISE"
-    C = "CREOSOTE"
-    Y = "FISHY"
-    F = "FOUL"
-    M = "MUSTY"
-    N = "NO ODOR"
-    P = "PUNGENT"
-    S = "SPICY"
+    a = "ALMOND"
+    l = "ANISE"
+    c = "CREOSOTE"
+    y = "FISHY"
+    f = "FOUL"
+    m = "MUSTY"
+    n = "NO ODOR"
+    p = "PUNGENT"
+    s = "SPICY"
 
 
 class GillAttachment(Enum):
-    A = "ATTACHED"
-    D = "DESCENDING"
-    F = "FREE"
-    N = "NOTCHED"
+    a = "ATTACHED"
+    d = "DESCENDING"
+    f = "FREE"
+    n = "NOTCHED"
 
 
 class GillSpacing(Enum):
-    C = "CLOSE"
-    W = "CROWDED"
-    D = "DISTANT"
+    c = "CLOSE"
+    w = "CROWDED"
+    d = "DISTANT"
 
 
 class GillSize(Enum):
-    B = "BROAD"
-    N = "NARROW"
+    b = "BROAD"
+    n = "NARROW"
 
 
 class GillColor(Enum):
-    K = "BLACK"
-    N = "BROWN"
-    B = "BUFF"
-    H = "CHOCOLATE"
-    G = "GRAY"
-    R = "GREEN"
-    O = "ORANGE"
-    P = "PINK"
-    U = "PURPLE"
-    E = "RED"
-    W = "WHITE"
-    Y = "YELLOW"
+    k = "BLACK"
+    n = "BROWN"
+    b = "BUFF"
+    h = "CHOCOLATE"
+    g = "GRAY"
+    r = "GREEN"
+    o = "ORANGE"
+    p = "PINK"
+    u = "PURPLE"
+    e = "RED"
+    w = "WHITE"
+    y = "YELLOW"
 
 
 class StalkShape(Enum):
-    E = "ENLARGING"
-    T = "TAPERING"
+    e = "ENLARGING"
+    t = "TAPERING"
 
 
 class StalkRoot(Enum):
-    B = "BULBOUS"
-    C = "CLUB"
-    U = "CUP"
-    E = "EQUAL"
-    Z = "RHIZOMORPHS"
-    R = "ROOTED"
-    M = "MISSING"
+    b = "BULBOUS"
+    c = "CLUB"
+    u = "CUP"
+    e = "EQUAL"
+    z = "RHIZOMORPHS"
+    r = "ROOTED"
+    m = "MISSING"
 
 
 class StalkSurfaceAboveRing(Enum):
-    F = "FIBROUS"
-    Y = "SCALY"
-    K = "SILKY"
-    S = "SMOOTH"
+    f = "FIBROUS"
+    y = "SCALY"
+    k = "SILKY"
+    s = "SMOOTH"
 
 
 class StalkSurfaceBelowRing(Enum):
-    F = "FIBROUS"
-    Y = "SCALY"
-    K = "SILKY"
-    S = "SMOOTH"
+    f = "FIBROUS"
+    y = "SCALY"
+    k = "SILKY"
+    s = "SMOOTH"
 
 
 class StalkColorAboveRing(Enum):
-    N = "BROWN"
-    B = "BUFF"
-    C = "CINNAMON"
-    G = "GRAY"
-    O = "ORANGE"
-    P = "PINK"
-    E = "RED"
-    W = "WHITE"
-    Y = "YELLOW"
+    n = "BROWN"
+    b = "BUFF"
+    c = "CINNAMON"
+    g = "GRAY"
+    o = "ORANGE"
+    p = "PINK"
+    e = "RED"
+    w = "WHITE"
+    y = "YELLOW"
 
 
 class StalkColorBelowRing(Enum):
-    N = "BROWN"
-    B = "BUFF"
-    C = "CINNAMON"
-    G = "GRAY"
-    O = "ORANGE"
-    P = "PINK"
-    E = "RED"
-    W = "WHITE"
-    Y = "YELLOW"
+    n = "BROWN"
+    b = "BUFF"
+    c = "CINNAMON"
+    g = "GRAY"
+    o = "ORANGE"
+    p = "PINK"
+    e = "RED"
+    w = "WHITE"
+    y = "YELLOW"
 
 
 class VeilType(Enum):
-    P = "PARTIAL"
-    U = "UNIVERSAL"
+    p = "PARTIAL"
+    u = "UNIVERSAL"
 
 
 class VeilColor(Enum):
-    N = "BROWN"
-    O = "ORANGE"
-    W = "WHITE"
-    Y = "YELLOW"
+    n = "BROWN"
+    o = "ORANGE"
+    w = "WHITE"
+    y = "YELLOW"
 
 
 class RingNumber(Enum):
-    N = "ZERO"
-    O = "ONE"
-    T = "TWO"
+    n = "ZERO"
+    o = "ONE"
+    t = "TWO"
 
 
 class RingType(Enum):
-    C = "COBWEBBY"
-    E = "EVANESCENT"
-    F = "FLARING"
-    L = "LARGE"
-    N = "NO RING"
-    P = "PENDANT"
-    S = "SHEATHING"
-    Z = "ZONE"
+    c = "COBWEBBY"
+    e = "EVANESCENT"
+    f = "FLARING"
+    l = "LARGE"
+    n = "NO RING"
+    p = "PENDANT"
+    s = "SHEATHING"
+    z = "ZONE"
 
 
 class SporePrintColor(Enum):
-    K = "BLACK"
-    N = "BROWN"
-    B = "BUFF"
-    H = "CHOCOLATE"
-    R = "GREEN"
-    O = "ORANGE"
-    U = "PURPLE"
-    W = "WHITE"
-    Y = "YELLOW"
+    k = "BLACK"
+    n = "BROWN"
+    b = "BUFF"
+    h = "CHOCOLATE"
+    r = "GREEN"
+    o = "ORANGE"
+    u = "PURPLE"
+    w = "WHITE"
+    y = "YELLOW"
 
 
 class Population(Enum):
-    A = "ABUNDANT"
-    C = "CLUSTERED"
-    N = "NUMEROUS"
-    S = "SCATTERED"
-    V = "SEVERAL"
-    Y = "SOLITARY"
+    a = "ABUNDANT"
+    c = "CLUSTERED"
+    n = "NUMEROUS"
+    s = "SCATTERED"
+    v = "SEVERAL"
+    y = "SOLITARY"
 
 
 class Habitat(Enum):
-    G = "GRASSES"
-    L = "LEAVES"
-    M = "MEADOWS"
-    P = "PATHS"
-    U = "URBAN"
-    W = "WASTE"
-    D = "WOODS"
+    g = "GRASSES"
+    l = "LEAVES"
+    m = "MEADOWS"
+    p = "PATHS"
+    u = "URBAN"
+    w = "WASTE"
+    d = "WOODS"

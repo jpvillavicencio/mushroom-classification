@@ -85,13 +85,11 @@ class TreeNode:
                 )
 
     def pretty_print(self, prefix=""):
-        """Prints the results of the
+        """Prints the results of the tree
 
         Args:
-            prefix (str, optional): _description_. Defaults to ''.
+            prefix (str, optional): used for prepending existing string. Defaults to ''.
         """
-        # print(f"children count: {len(self.children)}")
-        # print(f"self.split_attr: {self.split_attr}")
         if self.split_attr is None:
             logger.info(
                 f"{prefix} | decision -> {mushroom_mapping[self.target][self.decision].value}"
@@ -110,21 +108,22 @@ class TreeNode:
 
 class Tree:
     def __init__(self):
-        """_summary_"""
+        """Tree Constructor"""
         self.root = None
         self.current_node = None
 
     def train(self, samples, target, max_depth=5):
-        """_summary_
+        """trains decision tree based on samples
 
         Args:
-            samples (_type_): _description_
-            target (_type_): _description_
+            samples (df): training data
+            target (string): target classificaiton
+            max_depth (int, optional): maximum depth of decision tree. Defaults to 5.
         """
         self.root = TreeNode(samples, target, max_depth=max_depth)
 
     def predict(self, sample):
-        """_summary_
+        """predicts classification based on previous training data
 
         Args:
             sample (dataframe): test sample
@@ -145,6 +144,43 @@ class Tree:
                 )
                 self.current_node = self.current_node.children[attr_val]
         return decision
+
+    def calculate_accuracy(self, data, target):
+        """Calculates the accuracy of the data
+
+        Args:
+            t (Tree): decision tree
+            data (df): data sample
+            target (string): classification
+
+        Returns:
+            results: training accuracy
+        """
+
+        results = {
+            "TP": 0,
+            "TN": 0,
+            "FP": 0,
+            "FN": 0,
+        }
+
+        for i in range(0, len(data)):
+            prediction = self.predict(data.iloc[i])
+            if prediction == data.iloc[i][target]:
+                if prediction == "e":
+                    results["TP"] += 1
+                else:
+                    results["TN"] += 1
+            else:
+                if prediction == "e":
+                    results["FP"] += 1
+                else:
+                    results["FN"] += 1
+            # logger.debug(
+            #     f"predicition: {prediction} | actual: {test_data.iloc[i]['target']}"
+            # )
+
+        return results
 
 
 mushroom_mapping = {

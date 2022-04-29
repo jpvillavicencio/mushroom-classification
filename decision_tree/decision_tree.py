@@ -25,7 +25,6 @@ from model.mushroom import (
     Habitat,
 )
 from decision_tree.decision_tree_helper import (
-    compute_entropy,
     compute_info_gain,
     most_common_value,
 )
@@ -38,67 +37,76 @@ class TreeNode:
 
     def __init__(
         self,
-        samples,
-        target,
-        curr_depth=0,
         max_depth=5,
+        curr_depth=0,
         dataset="generic",
     ):
         """_summary_
 
         Args:
             samples (dataframe): dataset
-            target (string): string of target from dataset
+            target (dataframe): dataset of target
             curr_depth (int, optional): current depth of tree. Defaults to 0.
             max_depth (int, optional): maximum depth of tree. Defaults to 5.
         """
-        self.decision = None
-        self.samples = samples
-        self.target = target
-        self.split_attr = None
         self.children = {}
+        self.decision = None
+        self.split_attr = None
         self.curr_depth = curr_depth
         self.max_depth = max_depth
         self.dataset = dataset
+        self.results = {
+            "TP": 0,
+            "TN": 0,
+            "FP": 0,
+            "FN": 0,
+        }
 
-        self.train()
-
-    def train(self):
-        if len(self.samples) == 0:
-            # if there are no samples, use arbitary value of poisonous atm.
-            self.decision = most_common_value(self.samples[self.target])
+    def train(self, samples, target, target_name):
+        if len(samples) == 0 or self.curr_depth == self.max_depth:
+            # if there are no samples or reached max depth, use arbitary value of poisonous atm.
+            self.decision = most_common_value(target)
             logger.debug(f"no decision: {self.decision}")
-        elif self.curr_depth == self.max_depth:
-            self.decision = most_common_value(self.samples[self.target])
-        elif len(self.samples[self.target].unique()) == 1:
-            # check if data is pure
-            self.decision = self.samples[self.target].unique()[0]
-            logger.debug(f"pure decision: {self.decision}")
+            return
         else:
-            # Generate Subtree
-            info_gain_max = 0
-            for attr in self.samples.keys():  # Examine each attribute
-                # print(f"attr: {attr}")
-                if attr == self.target:
-                    continue
-                attr_ig = compute_info_gain(self.samples, attr, self.target)
-                if attr_ig > info_gain_max:
-                    self.split_attr = attr
-                    logger.debug(
-                        f"attr: {attr} | split_attr: {self.split_attr} | previous ig: {info_gain_max:.3f} | split_attr ig: {attr_ig:.3f}"
-                    )
-                    info_gain_max = attr_ig
-            for v in self.samples[self.split_attr].unique():
-                index = self.samples[self.split_attr] == v
-                self.children[v] = TreeNode(
-                    self.samples[index],
-                    self.target,
-                    curr_depth=self.curr_depth + 1,
-                    max_depth=self.max_depth,
-                    dataset=self.dataset,
-                )
+            unique_values = target.unique()
+            if len(unique_values) == 1:
+                # check if data is pure
+                self.decision = unique_values[0]
+                logger.debug(f"pure decision: {self.decision}")
+                return
+            else:
+                # Generate Subtree
+                info_gain_max = 0
+                for attr in samples.keys():  # Examine each attribute
+                    if attr == target_name:
+                        continue
+                    attr_ig = compute_info_gain(samples, attr, target)
+                    if attr_ig > info_gain_max:
+                        self.split_attr = attr
+                        logger.debug(
+                            f"attr: {attr} | split_attr: {self.split_attr} | previous ig: {info_gain_max:.3f} | split_attr ig: {attr_ig:.3f}"
+                        )
+                        info_gain_max = attr_ig
+                logger.debug(f"Split by {self.split_attr}, IG: {info_gain_max:.3f}")
+                self.children = {}
+                try:
+                    for value in samples[self.split_attr].unique():
+                        index = samples[self.split_attr] == value
+                        self.children[value] = TreeNode(
+                            curr_depth=self.curr_depth + 1,
+                            max_depth=self.max_depth,
+                            dataset=self.dataset,
+                        )
+                        self.children[value].train(
+                            samples[index],
+                            target[index],
+                            target_name=target_name,
+                        )
+                except Exception as e:
+                    logger.error(f"Training Error occured due to {repr(e)}")
 
-    def predict(self, sample):
+    def predict(self, sample, curr_depth=0):
         """predicts classification based on previous training data
 
         Args:
@@ -111,9 +119,42 @@ class TreeNode:
             logger.debug(f"decision: {self.decision}")
             return self.decision
         else:
-            attr_val = sample[self.split_attr]
-            logger.debug(f"testing {self.split_attr} -> {attr_val}")
-            return self.children[attr_val].predict(sample)
+            if curr_depth == self.max_depth:
+                # return arbitary value
+                return 1
+            else:
+                attr_val = sample[self.split_attr]
+                logger.debug(f"testing {self.split_attr} -> {attr_val}")
+                return self.children[attr_val].predict(
+                    sample, curr_depth=curr_depth + 1
+                )
+
+    def calculate_accuracy(self, df, target):
+        self.results = {
+            "TP": 0,
+            "TN": 0,
+            "FP": 0,
+            "FN": 0,
+        }
+        for i in range(0, len(df)):
+            try:
+                prediction = self.predict(df.iloc[i])
+            except Exception as e:
+                logger.error(f"Prediction failed at row {i} due to {repr(e)}")
+                # abitrary value
+                prediction = 0
+            if prediction == df.iloc[i][target]:
+                if prediction == 0:
+                    self.results["TP"] += 1
+                else:
+                    self.results["TN"] += 1
+            else:
+                if prediction == 1:
+                    self.results["FP"] += 1
+                else:
+                    self.results["FN"] += 1
+
+        return self.results
 
     def pretty_print(self, prefix=""):
         """Prints the results of the tree
@@ -124,7 +165,7 @@ class TreeNode:
         if self.split_attr is None:
             if self.dataset == "mushroom":
                 logger.info(
-                    f"{prefix} | decision -> {mushroom_mapping[self.target][self.decision].value}"
+                    f"{prefix} | decision -> {mushroom_mapping['class']['e' if self.decision == 0 else 'p'].value}"
                 )
             else:
                 logger.info(f"{prefix} | decision -> {self.decision}")
@@ -144,58 +185,6 @@ class TreeNode:
                         v.pretty_print(f"{prefix} -> {self.split_attr}={k}")
                     else:
                         v.pretty_print(f"{self.split_attr}={k}")
-
-
-class Tree:
-    def __init__(self, dataset="generic"):
-        """Tree Constructor"""
-        self.root = None
-        self.dataset = dataset
-
-    def train(self, samples, target, max_depth=5):
-        """trains decision tree based on samples
-
-        Args:
-            samples (df): training data
-            target (string): target classificaiton
-            max_depth (int, optional): maximum depth of decision tree. Defaults to 5.
-        """
-        self.root = TreeNode(samples, target, max_depth=max_depth, dataset=self.dataset)
-
-    def calculate_accuracy(self, data, target):
-        """Calculates the accuracy of the data
-
-        Args:
-            t (Tree): decision tree
-            data (df): data sample
-            target (string): classification
-
-        Returns:
-            results: training accuracy
-        """
-
-        results = {
-            "TP": 0,
-            "TN": 0,
-            "FP": 0,
-            "FN": 0,
-        }
-
-        for i in range(0, len(data)):
-            prediction = self.root.predict(data.iloc[i])
-            # logger.info(f"{data.iloc[i][target]}")
-            if prediction == data.iloc[i][target]:
-                if prediction == 0:
-                    results["TP"] += 1
-                else:
-                    results["TN"] += 1
-            else:
-                if prediction == 1:
-                    results["FP"] += 1
-                else:
-                    results["FN"] += 1
-
-        return results
 
 
 mushroom_mapping = {

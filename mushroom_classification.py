@@ -1,5 +1,5 @@
 import pandas as pd
-from decision_tree.decision_tree import Tree
+from decision_tree.decision_tree import TreeNode
 from sklearn.model_selection import train_test_split
 import log
 import os
@@ -28,40 +28,44 @@ def clean_data(df):
     df = df.dropna()
 
 
-def run_model_with_target(df, target, dataset="generic"):
+def run_model_with_target(df, target, max_depth=3, dataset="generic"):
     # initialise data
-    # evaluate_data(df)
+    evaluate_data(df)
     clean_data(df)
 
     # split data
-    train_data, test_data = train_test_split(df, test_size=0.2, random_state=2212)
+    train_data, test_data = train_test_split(df, test_size=0.4, random_state=2212)
     train_data.info()
     test_data.info()
-
     # Prepare data for training
-    attrs = df.keys()
-    data = train_data[attrs]
+    target_set = train_data[target]
 
-    t = Tree(dataset=dataset)
-    t.train(data, target, max_depth=3)
-    # t.root.pretty_print()
+    t = TreeNode(
+        max_depth=max_depth,
+        dataset=dataset,
+    )
+    t.train(samples=train_data, target=target_set, target_name=target)
+    t.pretty_print()
 
     # Train Data
     train_results = t.calculate_accuracy(
-        data=data,
+        df=train_data,
         target=target,
     )
 
     logger.info(
-        f"Training accuracy={((train_results['TP'] + train_results['TN']) / len(data))*100:.3f}%"
+        f"Training accuracy={((train_results['TP'] + train_results['TN']) / len(train_data))*100:.3f}%"
     )
     logger.info(
         f"TP={train_results['TP']}, TN={train_results['TN']}, FP={train_results['FP']}, FN={train_results['FN']}"
     )
+    logger.info(
+        f"TP={train_results['TP']/ len(train_data)*100:.2f}%, TN={train_results['TN']/ len(train_data)*100:.2f}%, FP={train_results['FP']/ len(train_data)*100:.2f}%, FN={train_results['FN']/ len(train_data)*100:.2f}%"
+    )
 
     # Predict Test Data
     test_results = t.calculate_accuracy(
-        data=test_data,
+        df=test_data,
         target=target,
     )
     logger.info(
@@ -70,23 +74,36 @@ def run_model_with_target(df, target, dataset="generic"):
     logger.info(
         f"TP={test_results['TP']}, TN={test_results['TN']}, FP={test_results['FP']}, FN={test_results['FN']}"
     )
+    logger.info(
+        f"TP={test_results['TP']/ len(test_data)*100:.2f}%, TN={test_results['TN']/ len(test_data)*100:.2f}%, FP={test_results['FP']/ len(test_data)*100:.2f}%, FN={test_results['FN']/ len(test_data)*100:.2f}%"
+    )
 
 
 def main():
+    # Mushroom Dataset
     mushroom_df = pd.read_csv(f"{os.path.join(folder_path, 'input', 'mushrooms.csv')}")
     mushroom_target = "class"
     # Map Target results to 0 or 1
     mushroom_df[mushroom_target] = mushroom_df[mushroom_target].map({"e": 0, "p": 1})
-    run_model_with_target(df=mushroom_df, target=mushroom_target, dataset="mushroom")
+    run_model_with_target(
+        df=mushroom_df,
+        target=mushroom_target,
+        dataset="mushroom",
+    )
 
-    # breast_cancer_df = pd.read_csv(
-    #     f"{os.path.join(folder_path, 'input', 'breast-cancer.data')}"
-    # )
-    # breast_cancer_target = "Class"
-    # breast_cancer_df[breast_cancer_target] = breast_cancer_df[breast_cancer_target].map(
-    #     {"no-recurrence-events": 0, "recurrence-events": 1}
-    # )
-    # run_model_with_target(df=breast_cancer_df, target=breast_cancer_target)
+    # # Iris Dataset
+    # df = pd.read_csv(f"{os.path.join(folder_path, 'input', 'iris.data')}")
+    # target = "class"
+    # df = df[df[target] != "Iris-virginica"]
+    # df[target] = df[target].map({"Iris-setosa": 0, "Iris-versicolor": 1})
+    # run_model_with_target(df=df, target=target)
+
+    # # Connect 4
+    # df = pd.read_csv(f"{os.path.join(folder_path, 'input', 'connect-4.data')}")
+    # target = "Class"
+    # df = df[df[target] != "draw"]
+    # df[target] = df[target].map({"win": 0, "loss": 1})
+    # run_model_with_target(df=df, target=target, max_depth=5)
 
 
 if __name__ == "__main__":

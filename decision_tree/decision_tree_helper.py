@@ -35,12 +35,12 @@ def compute_info_gain(samples, attr, target):
     for value, percentage in values.iteritems():
         # get split of each attribute
         logger.debug(f"{attr}:{value}:{percentage:.3f}")
-        sub_ent = compute_entropy(samples[samples[attr] == value][target])
+        sub_ent = compute_entropy(target[samples[attr] == value])
         split_ent += percentage * sub_ent
         logger.debug(
-            f"sub_ent: {compute_entropy(samples[samples[attr] == value][target]):.3f} | split_ent: {split_ent:.3f} "
+            f"sub_ent: {compute_entropy(target[samples[attr] == value]):.3f} | split_ent: {split_ent:.3f} "
         )
-    ent = compute_entropy(samples[target])
+    ent = compute_entropy(target)
     return ent - split_ent
 
 

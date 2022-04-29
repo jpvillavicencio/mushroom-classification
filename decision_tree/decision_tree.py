@@ -42,7 +42,7 @@ class TreeNode:
         target,
         curr_depth=0,
         max_depth=5,
-        parent_decision=None,
+        dataset="generic",
     ):
         """_summary_
 
@@ -59,14 +59,14 @@ class TreeNode:
         self.children = {}
         self.curr_depth = curr_depth
         self.max_depth = max_depth
-        self.parent_decision = parent_decision
+        self.dataset = dataset
 
         self.train()
 
     def train(self):
         if len(self.samples) == 0:
             # if there are no samples, use arbitary value of poisonous atm.
-            self.decision = self.predicted_decision
+            self.decision = most_common_value(self.samples[self.target])
             logger.debug(f"no decision: {self.decision}")
         elif self.curr_depth == self.max_depth:
             self.decision = most_common_value(self.samples[self.target])
@@ -88,56 +88,15 @@ class TreeNode:
                         f"attr: {attr} | split_attr: {self.split_attr} | previous ig: {info_gain_max:.3f} | split_attr ig: {attr_ig:.3f}"
                     )
                     info_gain_max = attr_ig
-            self.children = {}
             for v in self.samples[self.split_attr].unique():
                 index = self.samples[self.split_attr] == v
-                self.parent_decision = most_common_value(self.samples[self.target])
                 self.children[v] = TreeNode(
                     self.samples[index],
                     self.target,
                     curr_depth=self.curr_depth + 1,
                     max_depth=self.max_depth,
-                    parent_decision=self.parent_decision,
+                    dataset=self.dataset,
                 )
-
-    def pretty_print(self, prefix=""):
-        """Prints the results of the tree
-
-        Args:
-            prefix (str, optional): used for prepending existing string. Defaults to ''.
-        """
-        if self.split_attr is None:
-            logger.info(
-                f"{prefix} | decision -> {mushroom_mapping[self.target][self.decision].value}"
-            )
-        else:
-            for k, v in self.children.items():
-                if prefix:
-                    v.pretty_print(
-                        f"{prefix} -> {self.split_attr}={mushroom_mapping[self.split_attr][k].value}"
-                    )
-                else:
-                    v.pretty_print(
-                        f"{self.split_attr}={mushroom_mapping[self.split_attr][k].value}"
-                    )
-
-
-class Tree:
-    def __init__(self):
-        """Tree Constructor"""
-        self.root = None
-        self.current_node = None
-        self.previous_node = None
-
-    def train(self, samples, target, max_depth=5):
-        """trains decision tree based on samples
-
-        Args:
-            samples (df): training data
-            target (string): target classificaiton
-            max_depth (int, optional): maximum depth of decision tree. Defaults to 5.
-        """
-        self.root = TreeNode(samples, target, max_depth=max_depth)
 
     def predict(self, sample):
         """predicts classification based on previous training data
@@ -148,19 +107,60 @@ class Tree:
         Returns:
             str: decision
         """
-        decision = None
-        self.current_node = self.root
-        while decision is None:
-            if self.current_node.decision is not None:
-                logger.debug(f"decision: {self.current_node.decision}")
-                return self.current_node.decision
-            else:
-                attr_val = sample[self.current_node.split_attr]
-                logger.debug(
-                    f"testing {self.current_node.split_attr} -> {mushroom_mapping[self.current_node.split_attr][attr_val].value}"
+        if self.decision is not None:
+            logger.debug(f"decision: {self.decision}")
+            return self.decision
+        else:
+            attr_val = sample[self.split_attr]
+            logger.debug(f"testing {self.split_attr} -> {attr_val}")
+            return self.children[attr_val].predict(sample)
+
+    def pretty_print(self, prefix=""):
+        """Prints the results of the tree
+
+        Args:
+            prefix (str, optional): used for prepending existing string. Defaults to ''.
+        """
+        if self.split_attr is None:
+            if self.dataset == "mushroom":
+                logger.info(
+                    f"{prefix} | decision -> {mushroom_mapping[self.target][self.decision].value}"
                 )
-                self.current_node = self.current_node.children[attr_val]
-        return decision
+            else:
+                logger.info(f"{prefix} | decision -> {self.decision}")
+        else:
+            for k, v in self.children.items():
+                if self.dataset == "mushroom":
+                    if prefix:
+                        v.pretty_print(
+                            f"{prefix} -> {self.split_attr}={mushroom_mapping[self.split_attr][k].value}"
+                        )
+                    else:
+                        v.pretty_print(
+                            f"{self.split_attr}={mushroom_mapping[self.split_attr][k].value}"
+                        )
+                else:
+                    if prefix:
+                        v.pretty_print(f"{prefix} -> {self.split_attr}={k}")
+                    else:
+                        v.pretty_print(f"{self.split_attr}={k}")
+
+
+class Tree:
+    def __init__(self, dataset="generic"):
+        """Tree Constructor"""
+        self.root = None
+        self.dataset = dataset
+
+    def train(self, samples, target, max_depth=5):
+        """trains decision tree based on samples
+
+        Args:
+            samples (df): training data
+            target (string): target classificaiton
+            max_depth (int, optional): maximum depth of decision tree. Defaults to 5.
+        """
+        self.root = TreeNode(samples, target, max_depth=max_depth, dataset=self.dataset)
 
     def calculate_accuracy(self, data, target):
         """Calculates the accuracy of the data
@@ -182,20 +182,18 @@ class Tree:
         }
 
         for i in range(0, len(data)):
-            prediction = self.predict(data.iloc[i])
+            prediction = self.root.predict(data.iloc[i])
+            # logger.info(f"{data.iloc[i][target]}")
             if prediction == data.iloc[i][target]:
-                if prediction == "e":
+                if prediction == 0:
                     results["TP"] += 1
                 else:
                     results["TN"] += 1
             else:
-                if prediction == "e":
+                if prediction == 1:
                     results["FP"] += 1
                 else:
                     results["FN"] += 1
-            # logger.debug(
-            #     f"predicition: {prediction} | actual: {test_data.iloc[i]['target']}"
-            # )
 
         return results
 

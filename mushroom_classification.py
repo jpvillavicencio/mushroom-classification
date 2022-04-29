@@ -28,10 +28,9 @@ def clean_data(df):
     df = df.dropna()
 
 
-def main():
+def run_model_with_target(df, target, dataset="generic"):
     # initialise data
-    df = pd.read_csv(f"{os.path.join(folder_path, 'input', 'mushrooms.csv')}")
-    evaluate_data(df)
+    # evaluate_data(df)
     clean_data(df)
 
     # split data
@@ -42,11 +41,10 @@ def main():
     # Prepare data for training
     attrs = df.keys()
     data = train_data[attrs]
-    target = "class"
 
-    t = Tree()
+    t = Tree(dataset=dataset)
     t.train(data, target, max_depth=3)
-    t.root.pretty_print()
+    # t.root.pretty_print()
 
     # Train Data
     train_results = t.calculate_accuracy(
@@ -72,6 +70,23 @@ def main():
     logger.info(
         f"TP={test_results['TP']}, TN={test_results['TN']}, FP={test_results['FP']}, FN={test_results['FN']}"
     )
+
+
+def main():
+    mushroom_df = pd.read_csv(f"{os.path.join(folder_path, 'input', 'mushrooms.csv')}")
+    mushroom_target = "class"
+    # Map Target results to 0 or 1
+    mushroom_df[mushroom_target] = mushroom_df[mushroom_target].map({"e": 0, "p": 1})
+    run_model_with_target(df=mushroom_df, target=mushroom_target, dataset="mushroom")
+
+    # breast_cancer_df = pd.read_csv(
+    #     f"{os.path.join(folder_path, 'input', 'breast-cancer.data')}"
+    # )
+    # breast_cancer_target = "Class"
+    # breast_cancer_df[breast_cancer_target] = breast_cancer_df[breast_cancer_target].map(
+    #     {"no-recurrence-events": 0, "recurrence-events": 1}
+    # )
+    # run_model_with_target(df=breast_cancer_df, target=breast_cancer_target)
 
 
 if __name__ == "__main__":
